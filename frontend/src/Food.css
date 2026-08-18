@@ -1,0 +1,157 @@
+.food-page {
+    padding: 32px;
+    color: #ffffff;
+    min-height: 100%;
+}
+
+.food-page-header {
+    margin-bottom: 28px;
+}
+
+.food-page-header h1 {
+    margin: 0 0 6px;
+    color: #ffffff;
+    font-size: 32px;
+}
+
+.food-page-header p {
+    margin: 0;
+    color: #9ca8bd;
+    font-size: 15px;
+}
+
+.food-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.food-card {
+    background: #111a2b;
+    border: 1px solid #263750;
+    border-radius: 14px;
+    padding: 24px;
+    box-sizing: border-box;
+}
+
+.food-card h2 {
+    margin: 0 0 20px;
+    color: #ffffff;
+    font-size: 20px;
+}
+
+.food-card form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.food-card label {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    color: #aebbd0;
+    font-size: 13px;
+}
+
+.food-card input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 11px 12px;
+    border: 1px solid #33445f;
+    border-radius: 7px;
+    background: #1d293e;
+    color: #ffffff;
+    outline: none;
+}
+
+.food-card input:focus {
+    border-color: #00d9a6;
+}
+
+.food-card input::placeholder {
+    color: #71809a;
+}
+
+.food-card button {
+    grid-column: 1 / -1;
+    padding: 12px 18px;
+    border: none;
+    border-radius: 7px;
+    background: #00d9a6;
+    color: #07121f;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.food-card button:hover {
+    opacity: 0.9;
+}
+
+.calorie-summary {
+    min-height: 130px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: #062b3c;
+    border-radius: 10px;
+}
+
+.calorie-summary strong {
+    color: #00d9a6;
+    font-size: 38px;
+}
+
+.calorie-summary span {
+    margin-top: 5px;
+    color: #9ca8bd;
+}
+
+.food-card > p {
+    color: #8f9bb0;
+}
+
+.food-entry {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    background: #1d293e;
+    border-radius: 8px;
+}
+
+.food-entry strong {
+    color: #ffffff;
+}
+
+.food-entry span {
+    color: #00d9a6;
+    font-weight: 600;
+}
+
+/* Make Food Entries span the full width */
+.food-card:last-child {
+    grid-column: 1 / -1;
+}
+
+@media (max-width: 800px) {
+
+    .food-page {
+        padding: 20px;
+    }
+
+    .food-content {
+        grid-template-columns: 1fr;
+    }
+
+    .food-card:last-child {
+        grid-column: auto;
+    }
+
+    .food-card form {
+        grid-template-columns: 1fr;
+    }
+}
