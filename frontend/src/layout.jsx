@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from "react-router-dom";
+import logoImg from "./assets/fithub_logo.png";
 
 function Layout() {
   return (
@@ -6,8 +7,15 @@ function Layout() {
 
       <aside className="sidebar">
 
-        <div className="logo">
-          🏃 FitHub
+        <div className="logo" style={{ display: "flex", alignItems: "center", gap: "10px", padding: "4px 0" }}>
+          <img
+            src={logoImg}
+            alt="FitHub Logo"
+            style={{ width: "36px", height: "36px", borderRadius: "8px", objectFit: "cover" }}
+          />
+          <span style={{ fontWeight: "700", fontSize: "20px", color: "#ffffff", letterSpacing: "0.5px" }}>
+            Fit<span style={{ color: "#00d68f" }}>Hub</span>
+          </span>
         </div>
 
         <nav className="sidebar-nav">
