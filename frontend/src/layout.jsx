@@ -17,11 +17,15 @@ function Layout() {
           </NavLink>
 
           <NavLink to="/food">
-            🍴 Food
+            🍴 Food & Water
           </NavLink>
 
           <NavLink to="/activity">
             📈 Activity
+          </NavLink>
+
+          <NavLink to="/progress">
+            📊 Progress & BMI
           </NavLink>
 
           <NavLink to="/profile">

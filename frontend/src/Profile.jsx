@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useAppContext } from "./context/AppContext";
 
 function Profile() {
@@ -7,59 +7,36 @@ function Profile() {
     user,
     updateUser,
     logout,
-    allFoodLogs,
-    allActivityLogs
+    allFoodLogs
   } = useAppContext();
 
-
   const [isEditing, setIsEditing] = useState(false);
-  const[errors, setErrors] = useState({});
-
+  const [errors, setErrors] = useState({});
 
   const [formData, setFormData] = useState({
-    age: "",
-    weight: "",
-    height: "",
-    goal: "maintain"
+    age: user?.age ?? "",
+    weight: user?.weight ?? "",
+    height: user?.height ?? "",
+    goal: user?.goal ?? "maintain"
   });
-
-
-  // Keep form values synchronized with user data
-  useEffect(() => {
-
-    if (user) {
-
-      setFormData({
-        age: user.age ?? "",
-        weight: user.weight ?? "",
-        height: user.height ?? "",
-        goal: user.goal ?? "maintain"
-      });
-
-    }
-
-  }, [user]);
-
 
   // Handle input changes
   const handleChange = (event) => {
-  const { name, value } = event.target;
+    const { name, value } = event.target;
 
-  setFormData((currentData) => ({
-    ...currentData,
-    [name]: value
-  }));
+    setFormData((currentData) => ({
+      ...currentData,
+      [name]: value
+    }));
 
-  setErrors((currentErrors) => ({
-    ...currentErrors,
-    [name]: ""
-  }));
-};
-
+    setErrors((currentErrors) => ({
+      ...currentErrors,
+      [name]: ""
+    }));
+  };
 
   // Open edit mode
   const handleEdit = () => {
-
     if (!user) return;
 
     setFormData({
@@ -70,58 +47,53 @@ function Profile() {
     });
 
     setIsEditing(true);
-
   };
 
-
   // Save frontend changes
- const handleSave = () => {
-  const age = Number(formData.age);
-  const weight = Number(formData.weight);
-  const height = Number(formData.height);
+  const handleSave = () => {
+    const age = Number(formData.age);
+    const weight = Number(formData.weight);
+    const height = Number(formData.height);
 
-  const newErrors = {};
+    const newErrors = {};
 
-  if (!age || age < 1 || age > 120) {
-    newErrors.age = "Age must be between 1 and 120.";
-  }
+    if (!age || age < 1 || age > 120) {
+      newErrors.age = "Age must be between 1 and 120.";
+    }
 
-  if (!weight || weight <= 0 || weight > 500) {
-    newErrors.weight = "Please enter a valid weight.";
-  }
+    if (!weight || weight <= 0 || weight > 500) {
+      newErrors.weight = "Please enter a valid weight.";
+    }
 
-  if (!height || height <= 0 || height > 300) {
-    newErrors.height = "Please enter a valid height.";
-  }
+    if (!height || height <= 0 || height > 300) {
+      newErrors.height = "Please enter a valid height.";
+    }
 
-  if (!formData.goal) {
-    newErrors.goal = "Please select a goal.";
-  }
+    if (!formData.goal) {
+      newErrors.goal = "Please select a goal.";
+    }
 
-  setErrors(newErrors);
+    setErrors(newErrors);
 
-  // Stop if there are errors
-  if (Object.keys(newErrors).length > 0) {
-    return;
-  }
+    // Stop if there are errors
+    if (Object.keys(newErrors).length > 0) {
+      return;
+    }
 
-  updateUser({
-    age,
-    weight,
-    height,
-    goal: formData.goal
-  });
+    updateUser({
+      age,
+      weight,
+      height,
+      goal: formData.goal
+    });
 
-  setErrors({});
-  setIsEditing(false);
-};
-
+    setErrors({});
+    setIsEditing(false);
+  };
 
   // Cancel editing
   const handleCancel = () => {
-
     if (user) {
-
       setFormData({
         age: user.age ?? "",
         weight: user.weight ?? "",
@@ -132,16 +104,13 @@ function Profile() {
     setIsEditing(false);
   };
 
-
   // Loading state
   if (!user) {
-
     return (
       <div className="profile-loading">
         Loading profile...
       </div>
     );
-
   }
 
   return (
