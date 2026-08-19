@@ -168,16 +168,14 @@ const inMemoryData = {
 // Test API
 app.get("/", async (req, res) => {
     try {
-        await poolPromise;
-        res.json({
-            message: "FitHub API is running",
-            database: true
-        });
+        const pool = await poolPromise;
+        if (pool) {
+            res.json({ message: "FitHub API is running", database: true });
+        } else {
+            res.json({ message: "FitHub API is running in fallback mode", database: false });
+        }
     } catch {
-        res.json({
-            message: "FitHub API is running in fallback mode",
-            database: false
-        });
+        res.json({ message: "FitHub API is running in fallback mode", database: false });
     }
 });
 
@@ -192,6 +190,8 @@ app.get("/api/activity/:userId", async (req, res) => {
 
         try {
             const pool = await poolPromise;
+            if (!pool) throw new Error("SQL pool unavailable");
+
             const result = await pool
                 .request()
                 .input("UserID", sql.Int, userId)
@@ -219,8 +219,7 @@ app.get("/api/activity/:userId", async (req, res) => {
                 `);
 
             return res.json(result.recordset);
-        } catch (dbErr) {
-            console.warn("SQL Server unavailable, serving fallback activities:", dbErr.message);
+        } catch {
             const fallback = inMemoryData.activities[userId] || inMemoryData.activities[1] || [];
             return res.json(fallback);
         }
@@ -241,6 +240,8 @@ app.get("/api/profile/:userId", async (req, res) => {
 
         try {
             const pool = await poolPromise;
+            if (!pool) throw new Error("SQL pool unavailable");
+
             const result = await pool
                 .request()
                 .input("UserID", sql.Int, userId)
@@ -274,8 +275,7 @@ app.get("/api/profile/:userId", async (req, res) => {
             }
 
             return res.json(result.recordset[0]);
-        } catch (dbErr) {
-            console.warn("SQL Server unavailable, serving fallback profile:", dbErr.message);
+        } catch {
             const userProfile = inMemoryData.profiles[userId] || inMemoryData.profiles[1];
             return res.json(userProfile);
         }
@@ -314,22 +314,24 @@ app.put("/api/profile/:userId", async (req, res) => {
 
         try {
             const pool = await poolPromise;
-            await pool
-                .request()
-                .input("UserID", sql.Int, userId)
-                .input("Age", sql.Int, age)
-                .input("WeightKg", sql.Decimal(5, 2), weight)
-                .input("HeightCm", sql.Decimal(5, 2), height)
-                .input("Goal", sql.NVarChar(50), goal || "maintain")
-                .query(`
-                    UPDATE Profiles
-                    SET
-                        Age = @Age,
-                        WeightKg = @WeightKg,
-                        HeightCm = @HeightCm,
-                        Goal = @Goal
-                    WHERE UserID = @UserID
-                `);
+            if (pool) {
+                await pool
+                    .request()
+                    .input("UserID", sql.Int, userId)
+                    .input("Age", sql.Int, age)
+                    .input("WeightKg", sql.Decimal(5, 2), weight)
+                    .input("HeightCm", sql.Decimal(5, 2), height)
+                    .input("Goal", sql.NVarChar(50), goal || "maintain")
+                    .query(`
+                        UPDATE Profiles
+                        SET
+                            Age = @Age,
+                            WeightKg = @WeightKg,
+                            HeightCm = @HeightCm,
+                            Goal = @Goal
+                        WHERE UserID = @UserID
+                    `);
+            }
         } catch (dbErr) {
             console.warn("SQL Server unavailable, updated in memory:", dbErr.message);
         }
@@ -340,10 +342,6 @@ app.put("/api/profile/:userId", async (req, res) => {
         res.status(500).json({ message: "Failed to update profile" });
     }
 });
-
-// ==========================================
-// PROGRESS TRACKING & BMI (FR-8, FR-3.1, 6.4)
-// ==========================================
 
 // Get user progress logs
 app.get("/api/progress/:userId", async (req, res) => {
@@ -356,6 +354,8 @@ app.get("/api/progress/:userId", async (req, res) => {
 
         try {
             const pool = await poolPromise;
+            if (!pool) throw new Error("SQL pool unavailable");
+
             const result = await pool
                 .request()
                 .input("UserID", sql.Int, userId)
@@ -367,8 +367,7 @@ app.get("/api/progress/:userId", async (req, res) => {
                 `);
 
             return res.json(result.recordset);
-        } catch (dbErr) {
-            console.warn("SQL Server unavailable, serving fallback progress:", dbErr.message);
+        } catch {
             const logs = inMemoryData.progress[userId] || inMemoryData.progress[1] || [];
             return res.json(logs);
         }
@@ -420,22 +419,24 @@ app.post("/api/progress/:userId", async (req, res) => {
 
         try {
             const pool = await poolPromise;
-            await pool
-                .request()
-                .input("UserID", sql.Int, userId)
-                .input("Weight", sql.Decimal(5, 2), weightNum)
-                .input("BMI", sql.Decimal(5, 2), bmi)
-                .input("BodyFat", sql.Decimal(5, 2), bodyFat ? parseFloat(bodyFat) : null)
-                .input("Notes", sql.NVarChar(255), notes || "")
-                .input("Date", sql.DateTime, new Date(entryDate))
-                .query(`
-                    INSERT INTO Progress (UserID, Weight, BMI, BodyFat, Notes, Date)
-                    VALUES (@UserID, @Weight, @BMI, @BodyFat, @Notes, @Date);
+            if (pool) {
+                await pool
+                    .request()
+                    .input("UserID", sql.Int, userId)
+                    .input("Weight", sql.Decimal(5, 2), weightNum)
+                    .input("BMI", sql.Decimal(5, 2), bmi)
+                    .input("BodyFat", sql.Decimal(5, 2), bodyFat ? parseFloat(bodyFat) : null)
+                    .input("Notes", sql.NVarChar(255), notes || "")
+                    .input("Date", sql.DateTime, new Date(entryDate))
+                    .query(`
+                        INSERT INTO Progress (UserID, Weight, BMI, BodyFat, Notes, Date)
+                        VALUES (@UserID, @Weight, @BMI, @BodyFat, @Notes, @Date);
 
-                    UPDATE Profiles
-                    SET WeightKg = @Weight
-                    WHERE UserID = @UserID;
-                `);
+                        UPDATE Profiles
+                        SET WeightKg = @Weight
+                        WHERE UserID = @UserID;
+                    `);
+            }
         } catch (dbErr) {
             console.warn("SQL Server unavailable, recorded progress in memory:", dbErr.message);
         }
@@ -464,11 +465,13 @@ app.delete("/api/progress/:userId/:progressId", async (req, res) => {
 
         try {
             const pool = await poolPromise;
-            await pool
-                .request()
-                .input("ProgressID", sql.Int, progressId)
-                .input("UserID", sql.Int, userId)
-                .query("DELETE FROM Progress WHERE ProgressID = @ProgressID AND UserID = @UserID");
+            if (pool) {
+                await pool
+                    .request()
+                    .input("ProgressID", sql.Int, progressId)
+                    .input("UserID", sql.Int, userId)
+                    .query("DELETE FROM Progress WHERE ProgressID = @ProgressID AND UserID = @UserID");
+            }
         } catch (dbErr) {
             console.warn("SQL Server unavailable, deleted from memory:", dbErr.message);
         }
@@ -479,10 +482,6 @@ app.delete("/api/progress/:userId/:progressId", async (req, res) => {
         res.status(500).json({ message: "Failed to delete progress entry" });
     }
 });
-
-// ==========================================
-// WATER TRACKER (FR-7, FR-7.1)
-// ==========================================
 
 // Get user water intake
 app.get("/api/water/:userId", async (req, res) => {
@@ -549,14 +548,10 @@ app.post("/api/water/:userId/reset", async (req, res) => {
             inMemoryData.waterLogs[userId].logs = [];
         }
         res.json({ message: "Water intake reset", data: inMemoryData.waterLogs[userId] });
-    } catch (error) {
+    } catch {
         res.status(500).json({ message: "Failed to reset water" });
     }
 });
-
-// ==========================================
-// FOOD & NUTRITION TRACKING (FR-6, FR-6.2)
-// ==========================================
 
 // Get user food logs
 app.get("/api/food/:userId", async (req, res) => {
