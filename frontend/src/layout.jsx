@@ -40,6 +40,10 @@ function Layout() {
             👤 Profile
           </NavLink>
 
+          <NavLink to="/admin">
+            🛡️ Admin
+          </NavLink>
+
         </nav>
 
       </aside>

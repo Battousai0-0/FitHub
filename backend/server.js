@@ -162,7 +162,59 @@ const inMemoryData = {
                 fat: 9
             }
         ]
-    }
+    },
+    adminUsers: [
+        { id: 1, name: "Demo User", email: "user@fithub.com", role: "User", status: "Active", joinDate: "2026-06-15" },
+        { id: 2, name: "Marcus Vance", email: "marcus@gympro.com", role: "Trainer", status: "Active", joinDate: "2026-06-20" },
+        { id: 3, name: "Elena Rostova", email: "elena.fitness@fit.io", role: "Trainer", status: "Pending", joinDate: "2026-07-01" },
+        { id: 4, name: "Sarah Jenkins", email: "sarah.j@gmail.com", role: "User", status: "Active", joinDate: "2026-07-04" },
+        { id: 5, name: "David Kim", email: "dkim@workout.net", role: "User", status: "Suspended", joinDate: "2026-07-10" },
+        { id: 6, name: "Alex Mercer", email: "admin@fithub.com", role: "Admin", status: "Active", joinDate: "2026-01-01" }
+    ],
+    adminTrainers: [
+        {
+            id: 1,
+            userId: 2,
+            name: "Marcus Vance",
+            email: "marcus@gympro.com",
+            certification: "NASM-CPT, CSCS Strength Coach",
+            bio: "Specializing in hypertrophy, barbell powerbuilding, and athlete conditioning with 8+ years experience.",
+            isApproved: true,
+            clientsCount: 14,
+            rating: 4.9
+        },
+        {
+            id: 2,
+            userId: 3,
+            name: "Elena Rostova",
+            email: "elena.fitness@fit.io",
+            certification: "ISSA Master Trainer, PN Nutrition Coach",
+            bio: "Passionate about sustainable weight loss, mobility routines, and plant-based macronutrient planning.",
+            isApproved: false,
+            clientsCount: 0,
+            rating: 5.0
+        },
+        {
+            id: 3,
+            userId: 7,
+            name: "Kenji Takahashi",
+            email: "kenji.fit@tokyo.jp",
+            certification: "ACE Certified Personal Trainer",
+            bio: "Calisthenics specialist, functional mobility, and high-intensity interval training (HIIT).",
+            isApproved: false,
+            clientsCount: 0,
+            rating: 4.8
+        }
+    ],
+    adminExercises: [
+        { id: 1, name: "Push-ups", muscleGroup: "Chest", difficulty: "Beginner", equipment: "Bodyweight", instructions: "Keep back straight, lower chest to floor, and push back up explosively." },
+        { id: 2, name: "Barbell Squats", muscleGroup: "Legs", difficulty: "Intermediate", equipment: "Barbell", instructions: "Lower hips below knees keeping chest upright, then drive upward through midfoot." },
+        { id: 3, name: "Pull-ups", muscleGroup: "Back", difficulty: "Intermediate", equipment: "Pull-up Bar", instructions: "Hang with overhand grip, engage lats, and pull chin clearly over the bar." },
+        { id: 4, name: "Dumbbell Shoulder Press", muscleGroup: "Shoulders", difficulty: "Beginner", equipment: "Dumbbells", instructions: "Press dumbbells overhead smoothly from shoulder height until arms are fully extended." },
+        { id: 5, name: "Plank", muscleGroup: "Core", difficulty: "Beginner", equipment: "Bodyweight", instructions: "Maintain a rigid plank posture on forearms and toes with tight abdominal bracing." },
+        { id: 6, name: "Barbell Deadlift", muscleGroup: "Back", difficulty: "Advanced", equipment: "Barbell", instructions: "Hinge at hips, grip bar, drive through heels keeping neutral spine throughout movement." },
+        { id: 7, name: "Dumbbell Bicep Curls", muscleGroup: "Arms", difficulty: "Beginner", equipment: "Dumbbells", instructions: "Curl weights towards shoulders while keeping elbows pinned to sides." }
+    ]
 };
 
 // Test API
@@ -412,7 +464,6 @@ app.post("/api/progress/:userId", async (req, res) => {
         }
         inMemoryData.progress[userId].unshift(newEntry);
 
-        // Update profile weight as well
         if (inMemoryData.profiles[userId]) {
             inMemoryData.profiles[userId].WeightKg = weightNum;
         }
@@ -617,6 +668,158 @@ app.delete("/api/food/:userId/:foodId", async (req, res) => {
         console.error("Delete food error:", error);
         res.status(500).json({ message: "Failed to delete food entry" });
     }
+});
+
+// ==========================================
+// ADMIN MODULE ENDPOINTS (FR-11, FR-11.1, FR-11.2)
+// ==========================================
+
+// Get system stats overview
+app.get("/api/admin/stats", (req, res) => {
+    const totalUsers = inMemoryData.adminUsers.length;
+    const totalTrainers = inMemoryData.adminTrainers.length;
+    const pendingTrainers = inMemoryData.adminTrainers.filter(t => !t.isApproved).length;
+    const totalExercises = inMemoryData.adminExercises.length;
+    
+    res.json({
+        totalUsers,
+        totalTrainers,
+        pendingTrainers,
+        totalExercises,
+        engagementRate: "88.4%",
+        activeSessions: 42
+    });
+});
+
+// Get all users (User Management)
+app.get("/api/admin/users", (req, res) => {
+    res.json(inMemoryData.adminUsers);
+});
+
+// Update user status (Suspend / Reactivate User)
+app.put("/api/admin/users/:userId/status", (req, res) => {
+    const userId = parseInt(req.params.userId);
+    const { status } = req.body;
+
+    const user = inMemoryData.adminUsers.find(u => u.id === userId);
+    if (!user) {
+        return res.status(404).json({ message: "User not found" });
+    }
+
+    user.status = status || (user.status === "Active" ? "Suspended" : "Active");
+    res.json({ message: `User status updated to ${user.status}`, user });
+});
+
+// Delete user
+app.delete("/api/admin/users/:userId", (req, res) => {
+    const userId = parseInt(req.params.userId);
+    const initialLen = inMemoryData.adminUsers.length;
+    inMemoryData.adminUsers = inMemoryData.adminUsers.filter(u => u.id !== userId);
+
+    if (inMemoryData.adminUsers.length === initialLen) {
+        return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json({ message: "User deleted successfully" });
+});
+
+// Get all trainers (Trainer Management)
+app.get("/api/admin/trainers", (req, res) => {
+    res.json(inMemoryData.adminTrainers);
+});
+
+// Approve / Suspend Trainer (FR-11.1)
+app.put("/api/admin/trainers/:trainerId/approve", (req, res) => {
+    const trainerId = parseInt(req.params.trainerId);
+    const { isApproved } = req.body;
+
+    const trainer = inMemoryData.adminTrainers.find(t => t.id === trainerId);
+    if (!trainer) {
+        return res.status(404).json({ message: "Trainer not found" });
+    }
+
+    trainer.isApproved = isApproved !== undefined ? isApproved : !trainer.isApproved;
+    
+    // Also sync with adminUsers status
+    const correspondingUser = inMemoryData.adminUsers.find(u => u.id === trainer.userId);
+    if (correspondingUser) {
+        correspondingUser.status = trainer.isApproved ? "Active" : "Pending";
+    }
+
+    res.json({
+        message: `Trainer ${trainer.name} is now ${trainer.isApproved ? "Approved" : "Pending/Suspended"}`,
+        trainer
+    });
+});
+
+// Get all exercises (Exercise Management)
+app.get("/api/admin/exercises", (req, res) => {
+    res.json(inMemoryData.adminExercises);
+});
+
+// Add new exercise
+app.post("/api/admin/exercises", (req, res) => {
+    const { name, muscleGroup, difficulty, equipment, instructions } = req.body;
+
+    if (!name || !muscleGroup) {
+        return res.status(400).json({ message: "Exercise name and muscle group are required" });
+    }
+
+    const newExercise = {
+        id: Date.now(),
+        name,
+        muscleGroup,
+        difficulty: difficulty || "Beginner",
+        equipment: equipment || "None",
+        instructions: instructions || "Perform movement with good form."
+    };
+
+    inMemoryData.adminExercises.push(newExercise);
+    res.status(201).json({ message: "Exercise added successfully", exercise: newExercise });
+});
+
+// Update exercise
+app.put("/api/admin/exercises/:exerciseId", (req, res) => {
+    const exerciseId = parseInt(req.params.exerciseId);
+    const { name, muscleGroup, difficulty, equipment, instructions } = req.body;
+
+    const exercise = inMemoryData.adminExercises.find(e => e.id === exerciseId);
+    if (!exercise) {
+        return res.status(404).json({ message: "Exercise not found" });
+    }
+
+    if (name) exercise.name = name;
+    if (muscleGroup) exercise.muscleGroup = muscleGroup;
+    if (difficulty) exercise.difficulty = difficulty;
+    if (equipment) exercise.equipment = equipment;
+    if (instructions) exercise.instructions = instructions;
+
+    res.json({ message: "Exercise updated successfully", exercise });
+});
+
+// Delete exercise
+app.delete("/api/admin/exercises/:exerciseId", (req, res) => {
+    const exerciseId = parseInt(req.params.exerciseId);
+    const initialLen = inMemoryData.adminExercises.length;
+    inMemoryData.adminExercises = inMemoryData.adminExercises.filter(e => e.id !== exerciseId);
+
+    if (inMemoryData.adminExercises.length === initialLen) {
+        return res.status(404).json({ message: "Exercise not found" });
+    }
+
+    res.json({ message: "Exercise deleted successfully" });
+});
+
+// Export usage reports to CSV (FR-11.2)
+app.get("/api/admin/reports/csv", (req, res) => {
+    let csv = "ID,Name,Email,Role,Status,JoinDate\n";
+    inMemoryData.adminUsers.forEach(u => {
+        csv += `${u.id},"${u.name}","${u.email}","${u.role}","${u.status}","${u.joinDate}"\n`;
+    });
+
+    res.header("Content-Type", "text/csv");
+    res.attachment("fithub_users_report.csv");
+    res.send(csv);
 });
 
 // Start server
